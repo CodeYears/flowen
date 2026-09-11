@@ -1,0 +1,12 @@
+[project]
+name = "flowen"
+version = "0.1.0"
+description = "自动化测试框架"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "pytest>=9.1.1",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
