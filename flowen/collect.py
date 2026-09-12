@@ -1,5 +1,6 @@
 import inspect
 import types
+from pathlib import Path
 
 
 class Node:
@@ -39,7 +40,8 @@ class Collector(Node):
 
 
 class Module(Collector):
-    pass
+    def _totrail(self) -> list:
+        return list(Path(self.obj.__file__).parents)
 
 
 class Class(Collector):

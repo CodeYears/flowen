@@ -1,6 +1,9 @@
 import types
+from pathlib import Path
+from tempfile import TemporaryDirectory
 
 from flowen.collect import Class, Collector, Function, Item, Module
+from flowen.config import Config
 
 
 class TestCollector:
@@ -63,3 +66,18 @@ class TestCollector:
 
         parent = fn.getparent(Class)
         assert parent is cls
+
+    def test_totrail_and_back(self):
+        with TemporaryDirectory() as tmp:
+            tmpdir = Path(tmp)
+
+            a = tmpdir / "a"
+            a.mkdir()
+
+            x = a / "trail.py"
+            x.touch()
+
+            config = Config([x])
+            col = config.getfsnode(x)
+            trail = col._totrail()
+            print(trail)
