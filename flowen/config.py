@@ -1,12 +1,12 @@
 from pathlib import Path
 
-from flowen.collect import Module
-from flowen.utils import load_module
+from flowen.collect import Collector, Directory, Module
 
 
 class Config:
-    def __init__(self, paths: list[Path]):
-        self.paths = paths
+    def getfsnode(self, path: Path | str) -> Collector:
+        path = Path(path)
+        if path.is_dir():
+            return Directory(path)
 
-    def getfsnode(self, path: Path):
-        return Module(load_module(path))
+        return Module(path, parent=Directory(path.parent))
