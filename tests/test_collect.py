@@ -1,6 +1,8 @@
-import types
+from pathlib import Path
+from textwrap import dedent
 
 from flowen.collect import Class, Collector, Function, Item, Module
+from flowen.config import Config
 
 
 class TestCollector:
@@ -9,20 +11,21 @@ class TestCollector:
         assert not issubclass(Collector, Item)
         assert not issubclass(Item, Collector)
 
-    def test_check_equality(self):
-        """测试节点对象是值对象"""
-        module = types.ModuleType("test_module")
+    def test_check_equality(self, tmp_path):
 
-        def test_pass():
-            pass
+        src = dedent("""\
+            def test_pass():
+                pass
 
-        def test_fail():
-            assert 0
+            def test_fail():
+                assert 0
+        """)
 
-        module.test_pass = test_pass
-        module.test_fail = test_fail
+        file_path = tmp_path / "test_demo.py"
+        file_path.write_text(src)
 
-        modcol = Collector(module)
+        config = Config()
+        modcol = config.getfsnode(file_path)
 
         fn1 = modcol.collect_by_name("test_pass")
         assert isinstance(fn1, Function)
@@ -45,15 +48,18 @@ class TestCollector:
             assert [1, 2, 3] != fn
             assert modcol != fn
 
-    def test_getparent(self):
-        module = types.ModuleType("test_module")
+    def test_getparent(self, tmp_path: Path):
+        src = dedent("""\
+            class TestClass:
+                def test_foo():
+                    pass
+        """)
 
-        class TestClass:
-            def test_foo():
-                pass
+        file_path = tmp_path / "test_demo.py"
+        file_path.write_text(src)
 
-        module.TestClass = TestClass
-        modcol = Collector(module)
+        config = Config()
+        modcol = config.getfsnode(file_path)
 
         cls = modcol.collect_by_name("TestClass")
         fn = cls.collect_by_name("test_foo")
