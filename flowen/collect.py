@@ -1,5 +1,4 @@
 import inspect
-from inspect import getmro
 from pathlib import Path
 
 from flowen.utils import load_module
@@ -7,10 +6,12 @@ from flowen.utils import load_module
 
 class Node:
     def __init__(self, name: str, parent: Node = None):
+        from flowen.config import Config
+
         self.name = name
         self.parent = parent
         self.fspath: Path = getattr(parent, "fspath", None)
-        self.config = getattr(parent, "config", None)
+        self.config: Config = getattr(parent, "config", None)
 
     def __hash__(self):
         return hash((self.name, self.parent))
@@ -34,6 +35,45 @@ class Node:
             return self
 
         return Module(path, self)
+
+    def listchain(self, rootfirst: bool = False):
+        l = [self]
+        while True:
+            cur = l[-1].parent
+
+            if cur:
+                l.append(cur)
+            else:
+                if not rootfirst:
+                    return l
+                else:
+                    return reversed(l)
+
+    def listnames(self):
+        return [item.name for item in self.listchain(True)]
+
+    def _totrail(self):
+        top_parent = self.listchain()[-1]
+        relpath = top_parent.fspath.relative_to(self.config.topdir)
+
+        results = []
+        for item in self.listchain():
+            if isinstance(item, Directory):
+                break
+
+            results.append(item)
+
+        return relpath, tuple(item.name for item in results)
+
+    @staticmethod
+    def _fromtrail(trail, config):
+        col = config.getfsnode(config.topdir / trail[0])
+        nodes = list(trail[1])
+
+        while nodes:
+            col = col.collect_by_name(nodes.pop(0))
+
+        return col
 
 
 class Collector(Node):
@@ -61,15 +101,15 @@ class Directory(FSCollector):
                 l.append(res)
         return l
 
-    def consider(self):
-        if self.fspath.is_file():
-            res = self.consider_file()
+    def consider(self, path: Path):
+        if path.is_file():
+            res = self.consider_file(path)
 
         return res
 
     def consider_file(self, path: Path):
-        if path.name.startswith("pytest_") and path.suffix == ".py":
-            return Module(path.name, parent=self)
+        if path.name.startswith("test_") and path.suffix == ".py":
+            return Module(path, parent=self)
 
 
 class Module(FSCollector):
