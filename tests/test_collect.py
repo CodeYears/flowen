@@ -2,7 +2,7 @@ from pathlib import Path
 from textwrap import dedent
 
 from flowen.collect import Class, Collector, Function, Item, Module
-from flowen.config import Config
+from flowen.config import config
 
 
 class TestCollector:
@@ -24,7 +24,6 @@ class TestCollector:
         file_path = tmp_path / "test_demo.py"
         file_path.write_text(src)
 
-        config = Config()
         modcol = config.getfsnode(file_path)
 
         fn1 = modcol.collect_by_name("test_pass")
@@ -58,7 +57,6 @@ class TestCollector:
         file_path = tmp_path / "test_demo.py"
         file_path.write_text(src)
 
-        config = Config()
         modcol = config.getfsnode(file_path)
 
         cls = modcol.collect_by_name("TestClass")
@@ -69,3 +67,20 @@ class TestCollector:
 
         parent = fn.getparent(Class)
         assert parent is cls
+
+    def test_to_trail_and_back(self, tmp_path: Path):
+        a = tmp_path / "a"
+        a.mkdir()
+
+        x = a / "test_trail.py"
+        x.touch()
+
+        conf = config._reparse([x])
+        col = conf.getfsnode(x)
+
+        trail = col._totrail()
+        assert trail[0] == a.relative_to(conf.topdir)
+        assert trail[1] == ("test_trail.py",)
+
+        col2 = Collector._fromtrail(trail, conf)
+        assert col2.listnames() == col.listnames()
