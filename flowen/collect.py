@@ -53,6 +53,9 @@ class Node:
         return [item.name for item in self.listchain(True)]
 
     def _totrail(self):
+        if not self.fspath.is_relative_to(self.config.topdir):
+            raise ValueError(f"{self.fspath} 不是 {self.config.topdir} 和他的子路径")
+
         top_parent = self.listchain()[-1]
         relpath = top_parent.fspath.relative_to(self.config.topdir)
 
@@ -63,7 +66,7 @@ class Node:
 
             results.append(item)
 
-        return relpath, tuple(item.name for item in results)
+        return str(relpath), tuple(item.name for item in results)
 
     @staticmethod
     def _fromtrail(trail, config):
@@ -100,6 +103,14 @@ class Directory(FSCollector):
             if res is not None:
                 l.append(res)
         return l
+
+    def _getitembynames(self, names: list):
+        idx = names.index(self.name)
+        cur = self
+        for name in names[idx + 1 :]:
+            cur = cur.collect_by_name(name)
+
+        return cur
 
     def consider(self, path: Path):
         if path.is_file():
