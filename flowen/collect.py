@@ -102,6 +102,8 @@ class Directory(FSCollector):
             res = self.consider(path)
             if res is not None:
                 l.append(res)
+
+        l.sort(key=lambda x: x.name)
         return l
 
     def _getitembynames(self, names: list):
@@ -114,13 +116,24 @@ class Directory(FSCollector):
 
     def consider(self, path: Path):
         if path.is_file():
-            res = self.consider_file(path)
+            return self.consider_file(path)
 
-        return res
+        if path.is_dir():
+            return self.consider_dir(path)
 
     def consider_file(self, path: Path):
-        if path.name.startswith("test_") and path.suffix == ".py":
-            return Module(path, parent=self)
+        if not (path.stem.startswith("test_") or path.stem.endswith("_test")):
+            return
+        if path.suffix != ".py":
+            return
+
+        return Module(path, parent=self)
+
+    def consider_dir(self, path: Path):
+        if path.name.startswith((".", "_", "{", "CVS")):
+            return
+
+        return Directory(path, parent=self)
 
 
 class Module(FSCollector):
