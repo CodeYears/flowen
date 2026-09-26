@@ -1,6 +1,7 @@
-import pytest
 from pathlib import Path
 from textwrap import dedent
+
+import pytest
 
 from flowen.collect import Class, Collector, Function, Item, Module
 from flowen.config import config
@@ -127,3 +128,69 @@ class TestCollector:
     @pytest.mark.skip
     def test_listnames_getitembynames_custom(self):
         """该测试用例等自定义结点机制 / conftest 机制完善后再实现"""
+
+
+class TestCollectFS:
+    def test_ignored_certain_directories(self, tmp_path: Path):
+        ignored = ["_darcs", "CVS", "{arch}", ".whatever", ".bzr"]
+
+        for name in ignored:
+            (tmp_path / name / "test_notfound.py").parent.mkdir(parents=True)
+
+        (tmp_path / "normal" / "test_found.py").parent.mkdir()
+        (tmp_path / "test_found.py").touch()
+
+        conf = config._reparse([tmp_path])
+        dircol = conf.getfsnode(tmp_path)
+
+        items = dircol.collect()
+        names = [item.name for item in items]
+
+        assert len(items) == 2
+        assert "normal" in names
+        assert "test_found.py" in names
+
+    def test_found_certain_testfiles(self, tmp_path: Path):
+        (tmp_path / "test_found.py").write_text("pass")
+        (tmp_path / "found_test.py").write_text("pass")
+
+        conf = config._reparse([tmp_path])
+        dircol = conf.getfsnode(tmp_path)
+        items = dircol.collect()
+
+        assert len(items) == 2
+        assert items[0].name == "found_test.py"
+        assert items[1].name == "test_found.py"
+
+    def test_directory_file_sorting(self, tmp_path: Path):
+        (tmp_path / "test_one.py").write_text("hello")
+        (tmp_path / "x").mkdir()
+        (tmp_path / "dir1").mkdir()
+        (tmp_path / "test_two.py").write_text("hello")
+        (tmp_path / "dir2").mkdir()
+
+        conf = config._reparse([tmp_path])
+        col = conf.getfsnode(tmp_path)
+        names = [item.name for item in col.collect()]
+
+        assert names == ["dir1", "dir2", "test_one.py", "test_two.py", "x"]
+
+
+class TestCollectPluginHooks:
+    @pytest.mark.skip
+    def test_pytest_collect_file(self):
+        """该测试用例等插件机制完善后再实现"""
+
+    @pytest.mark.skip
+    def test_pytest_collect_directory(self):
+        """该测试用例等插件机制完善后再实现"""
+
+
+class TestCustomConftests:
+    @pytest.mark.skip
+    def test_non_python_files(self):
+        """该测试用例等 conftest 机制完善后再实现"""
+
+    @pytest.mark.skip
+    def test_collectignore_exclude_on_option(self):
+        """该测试用例等 conftest 机制完善后再实现"""
