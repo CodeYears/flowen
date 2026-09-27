@@ -2,9 +2,13 @@ import os
 from pathlib import Path
 
 from flowen.collect import Collector, Directory, Module
+from flowen.parseopt import ArgParser
 
 
 class Config:
+    def __init__(self):
+        self._parser = ArgParser()
+
     def getfsnode(self, path: Path | str) -> Collector:
         path = Path(path)
         if path.is_dir():

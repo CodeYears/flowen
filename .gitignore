@@ -16,6 +16,7 @@ htmlcov/
 .mypy_cache/
 .pyright/
 .ruff_cache/
+.temp/
 
 # Build / packaging
 build/
