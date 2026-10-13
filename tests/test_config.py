@@ -1,6 +1,8 @@
 import pytest
 
+from flowen.config import Config
 from flowen.config import config
+import flowen
 
 
 class TestConfigCmdlineParsing:
@@ -27,3 +29,23 @@ class TestConfigCmdlineParsing:
 
         group.addoption("--option4", action="store", type=int)
         assert group.options[3].default == ("NO", "DEFAULT")
+
+    @pytest.mark.skip
+    def test_parser_addoption_default_conftest(self):
+        """等 conftest 机制完善再实现"""
+
+    @pytest.mark.skip
+    def test_config_cmdline_options_only_lowercase(self):
+        """等 conftest 机制完善再实现"""
+
+    def test_parsing_again_fails(self, tmpdir):
+        conf = config._reparse([tmpdir])
+        with flowen.raises(AssertionError):
+            conf.parse([])
+
+
+class TestConfigTmpdir:
+    def test_getbasetemp(self, tmp_path):
+        conf = Config(tmp_path)
+        conf.basetemp = "hello"
+        assert conf.getbasetemp() == "hello"
