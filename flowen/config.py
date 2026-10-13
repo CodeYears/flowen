@@ -6,8 +6,9 @@ from flowen.parseopt import ArgParser
 
 
 class Config:
-    def __init__(self):
+    def __init__(self, topdir=None):
         self._parser = ArgParser()
+        self.topdir = topdir
 
     def getfsnode(self, path: Path | str) -> Collector:
         path = Path(path)
@@ -34,6 +35,10 @@ class Config:
 
         finally:
             config = old_config
+
+    def getbasetemp(self):
+        if hasattr(self, "basetemp"):
+            return self.basetemp
 
 
 def gettopdir(args: list[Path]):
