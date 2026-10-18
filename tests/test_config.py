@@ -49,3 +49,11 @@ class TestConfigTmpdir:
         conf = Config(tmp_path)
         conf.basetemp = "hello"
         assert conf.getbasetemp() == "hello"
+
+    @pytest.mark.skip
+    def test_mktemp(self, tmp_path):
+        """我没搞懂这个测试用例的测试意图"""
+
+    @pytest.mark.skip
+    def test_reparse(self, testdir):
+        """我没搞懂这个测试用例的测试意图"""
