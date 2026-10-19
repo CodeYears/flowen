@@ -30,3 +30,23 @@ class TestConftestValueAccessGlobal:
         assert conftest.rget("a") == 1
         assert conftest.rget("b", adir / "b") == 2
         assert len(l) == 3
+
+    def test_immediate_initialiation_and_incremental_are_the_same(self, tmp_path: Path):
+        conftest = Conftest()
+        tmp_path = parpare_conftest_env(tmp_path)
+        conftest.create_path_conftest_map(tmp_path)
+        snap1 = len(conftest.path_conftest_map)
+
+        conftest.create_path_conftest_map(tmp_path / "adir")
+        assert len(conftest.path_conftest_map) == snap1 + 1
+
+        conftest.create_path_conftest_map(tmp_path / "b")
+        assert len(conftest.path_conftest_map) == snap1 + 2
+
+    def test_default_Module_setting_is_visible_always(self, tmp_path: Path):
+        from flowen import Module
+
+        tmp_path = parpare_conftest_env(tmp_path)
+        for path in tmp_path.parents:
+            conftest = Conftest(path)
+            assert conftest.rget("Module") == Module
