@@ -4,27 +4,30 @@ from collections.abc import Callable
 from pathlib import Path
 from types import ModuleType
 
-
 default_conftest_path = Path(__file__).parent / "default_conftest.py"
 
 
 class Conftest:
-    def __init__(self, onimport: Callable | None = None):
+    def __init__(self, path: Path | None = None, onimport: Callable | None = None):
         self.path_conftest_map = {}
         self.conf_modules = []
         self.onimport = onimport
 
+        if path is not None:
+            self.setinitial([path])
+
     def setinitial(self, paths: list[Path]):
         path = paths[0]
 
-        self.import_conftest(default_conftest_path)
+        self.conf_modules.append(self.import_conftest(default_conftest_path))
         self.create_path_conftest_map(path)
 
-    def create_path_conftest_map(self, path):
+    def create_path_conftest_map(self, path: Path):
         for cur in [path] + list(path.parents):
             conf_path = cur / "conftest.py"
 
             if not conf_path.exists():
+                self.path_conftest_map[cur] = list(self.conf_modules)
                 continue
 
             if cur in self.path_conftest_map:
