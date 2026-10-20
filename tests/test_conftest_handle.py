@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import flowen
 from flowen.conftest_handle import Conftest
 
 
@@ -50,3 +51,43 @@ class TestConftestValueAccessGlobal:
         for path in tmp_path.parents:
             conftest = Conftest(path)
             assert conftest.rget("Module") == Module
+
+    def test_default_has_lower_prio(self, tmp_path: Path):
+        tmp_path = parpare_conftest_env(tmp_path)
+        conftest = Conftest(tmp_path / "adir")
+        assert conftest.rget("Directory") == 3
+
+    def test_value_access_not_existing(self, tmp_path: Path):
+        tmp_path = parpare_conftest_env(tmp_path)
+        conftest = Conftest(tmp_path)
+        with flowen.raises(KeyError):
+            conftest.rget("a")
+
+    def test_value_access_by_path(self, tmp_path: Path):
+        tmp_path = parpare_conftest_env(tmp_path)
+        conftest = Conftest(tmp_path)
+        assert conftest.rget("a", tmp_path / "adir") == 1
+        assert conftest.rget("a", tmp_path / "adir" / "b") == 1.5
+
+    def test_value_access_with_init_one_conftest(self, tmp_path: Path):
+        tmp_path = parpare_conftest_env(tmp_path)
+        conftest = Conftest(tmp_path / "adir")
+        assert conftest.rget("a") == 1
+
+    def test_value_access_with_init_two_conftests(self, tmp_path: Path):
+        tmp_path = parpare_conftest_env(tmp_path)
+        conftest = Conftest(tmp_path / "adir" / "b")
+        assert conftest.rget("a") == 1.5
+
+    def test_value_access_with_confmod(self, tmp_path: Path):
+        tmp_path = parpare_conftest_env(tmp_path)
+
+        topdir = tmp_path / "adir" / "b"
+        (topdir / "xx").mkdir(parents=True)
+
+        conftest = Conftest(topdir)
+        mod, value = conftest.rget_with_confmod("a", topdir)
+        assert value == 1.5
+        path = Path(mod.__file__)
+        assert path.parent == topdir
+        assert path.stem == "conftest"

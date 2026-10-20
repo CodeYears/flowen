@@ -1,8 +1,7 @@
 import pytest
 
-from flowen.config import Config
-from flowen.config import config
 import flowen
+from flowen.config import Config, config
 
 
 class TestConfigCmdlineParsing:
