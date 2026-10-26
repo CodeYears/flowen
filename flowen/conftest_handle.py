@@ -17,10 +17,10 @@ class Conftest:
             self.setinitial([path])
 
     def setinitial(self, paths: list[Path]):
-        path = paths[0]
-
         self.conf_modules.append(self.import_conftest(default_conftest_path))
-        self.create_path_conftest_map(path)
+
+        for path in paths + [Path.cwd()]:
+            self.create_path_conftest_map(path)
 
     def create_path_conftest_map(self, path: Path):
         for cur in [path] + list(path.parents):

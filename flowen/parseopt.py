@@ -1,39 +1,34 @@
-import os
-from argparse import ArgumentParser, _ArgumentGroup, _StoreTrueAction, _StoreFalseAction
+import argparse
+from collections.abc import Callable
 
 
-class ArgParser:
-    def __init__(self):
-        self.parser = ArgumentParser()
-        self.groups = []
+class Parser:
+    def __init__(self, processopt: Callable | None = None):
+        self._parser = argparse.ArgumentParser()
+        self._default_group = self._parser.add_argument_group("default")
+        self.groups = {"default": self._default_group}
+        self.processopt = processopt
 
-    def addgroup(self, *args, **kwargs):
-        group_row = self.parser.add_argument_group(*args, **kwargs)
-        group = OptGroup(group_row)
-        self.groups.append(group)
+    def parse(self, args: list, namespace=None):
+        parse_args = self._parser.parse_args(args, namespace)
+        if self.processopt:
+            self.processopt(parse_args)
+
+        return parse_args
+
+    def add_argument(self, *args, **kwargs):
+        self._default_group.add_argument(*args, **kwargs)
+
+    def addgroup(self, title: str, description: str | None = None):
+        if title in self.groups:
+            raise ValueError(f"{title} 参数组已存在")
+
+        group = self._parser.add_argument_group(title, description)
+        self.groups[title] = group
         return group
 
-
-class OptGroup:
-    def __init__(self, group: _ArgumentGroup):
-        self.group = group
-        self.options = []
-
-    def processopt(self, opt):
-        val = os.getenv("PYTEST_OPTION_" + opt.dest.upper())
-        if val is None:
-            if opt.default is None:
-                opt.default = ("NO", "DEFAULT")
-            return
-
-        if opt.type:
-            val = opt.type(val)
-        elif not opt.type and isinstance(opt, (_StoreTrueAction, _StoreFalseAction)):
-            val = eval(val)
-
-        opt.default = val
-
-    def addoption(self, *args, **kwargs):
-        opt = self.group.add_argument(*args, **kwargs)
-        self.processopt(opt)
-        self.options.append(opt)
+    def getgroup(self, title: str, description: str | None = None):
+        try:
+            return self.groups[title]
+        except KeyError:
+            return self.addgroup(title, description)

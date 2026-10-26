@@ -1,3 +1,7 @@
+from optparse import Option
+from pathlib import Path
+from textwrap import dedent
+
 import pytest
 
 import flowen
@@ -6,9 +10,45 @@ from flowen.config import Config, config
 
 class TestConfigCmdlineParsing:
     @pytest.mark.skip
-    def test_config_cmdline_options(self, testdir):
-        """等 conftest 机制完善再实现"""
+    def test_config_options(self):
+        opt1 = Option(
+            "-G", "--glong", default=42, type=int, dest="gdest", help="g value"
+        )
+        conf = config._reparse()
 
+        conf.addoptions("testing group", opt1)
+        assert config.option.gdest == 17
+
+    @pytest.mark.skip
+    def test_config_cmdline_options(self, tmp_path: Path):
+        src = dedent("""\
+            from optparse import Option
+            from config import config
+
+            group = config.addoptions(
+                "testing group",
+                Option(
+                    "-G",
+                    "--glong",
+                    action="store",
+                    default=42,
+                    type=int,
+                    dest="gdest",
+                    help="g value.",
+                ),
+                Option(
+                    "-T",
+                    "--tlong",
+                    action="callback",
+                    help="t value.",
+                ),
+            )
+        """)
+
+        (tmp_path / "contest.py").write_text(src)
+        print(config._reparse())
+
+    @pytest.mark.skip
     def test_parser_addoption_default_env(self, monkeypatch):
         import os
 
@@ -37,8 +77,8 @@ class TestConfigCmdlineParsing:
     def test_config_cmdline_options_only_lowercase(self):
         """等 conftest 机制完善再实现"""
 
-    def test_parsing_again_fails(self, tmpdir):
-        conf = config._reparse([tmpdir])
+    def test_parsing_again_fails(self, tmp_path: Path):
+        conf = config._reparse([tmp_path])
         with flowen.raises(AssertionError):
             conf.parse([])
 
