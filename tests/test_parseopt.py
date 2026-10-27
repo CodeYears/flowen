@@ -83,13 +83,10 @@ class TestParser:
         assert option.world == 42
         assert args is option
 
-    @pytest.mark.skip
     def test_parse_defaultgetter(self):
         def defaultget(option):
-            if option.type == "int":
-                option.default = 42
-            elif option.type == "string":
-                option.default = "world"
+            option.__dict__["hello"] = "world"
+            option.__dict__["this"] = 42
 
         parser = parseopt.Parser(processopt=defaultget)
         parser.add_argument("--this", dest="this", type=int, action="store")
