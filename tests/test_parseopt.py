@@ -1,15 +1,17 @@
 import argparse
 
-import pytest
-
 import flowen
 from flowen import parseopt
 
 
 class TestParser:
-    @pytest.mark.skip
-    def test_init(self):
-        pass
+    def test_init(self, capsys):
+        parser = parseopt.Parser(usage="xyz")
+        with flowen.raises(SystemExit):
+            parser.parse(["-h"])
+
+        out, _ = capsys.readouterr()
+        assert out.find("xyz") != -1
 
     def test_group_add_and_get(self):
         parser = parseopt.Parser()

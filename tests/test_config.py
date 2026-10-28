@@ -1,33 +1,38 @@
-from optparse import Option
+from argparse import _ArgumentGroup
 from pathlib import Path
 from textwrap import dedent
 
 import pytest
 
 import flowen
-from flowen.config import Config, config
+from flowen.config import config
 
 
 class TestConfigCmdlineParsing:
-    @pytest.mark.skip
     def test_config_options(self):
-        opt1 = Option(
-            "-G", "--glong", default=42, type=int, dest="gdest", help="g value"
-        )
-        conf = config._reparse()
+        conf = config._reparse([])
 
-        conf.addoptions("testing group", opt1)
-        assert config.option.gdest == 17
+        def configure(group: _ArgumentGroup):
+            group.add_argument(
+                "-G",
+                "--glong",
+                action="store",
+                default=42,
+                type=int,
+                dest="gdest",
+                help="g value.",
+            )
 
-    @pytest.mark.skip
+        conf.addoptions("testing group", configure)
+        assert conf.option.gdest == 42
+
     def test_config_cmdline_options(self, tmp_path: Path):
         src = dedent("""\
-            from optparse import Option
-            from config import config
+            from argparse import _ArgumentGroup
+            from flowen.config import config
 
-            group = config.addoptions(
-                "testing group",
-                Option(
+            def configure(group: _ArgumentGroup):
+                group.add_argument(
                     "-G",
                     "--glong",
                     action="store",
@@ -35,18 +40,20 @@ class TestConfigCmdlineParsing:
                     type=int,
                     dest="gdest",
                     help="g value.",
-                ),
-                Option(
+                )
+
+                group.add_argument(
                     "-T",
                     "--tlong",
-                    action="callback",
-                    help="t value.",
-                ),
-            )
+                    help="t value",
+                )
+            group = config.addoptions("testing group", configure)
         """)
 
-        (tmp_path / "contest.py").write_text(src)
-        print(config._reparse())
+        (tmp_path / "conftest.py").write_text(src)
+        config._reparse([tmp_path])
+        args = config._parser.parse(["-G", "17"])
+        assert args.gdest == 17
 
     @pytest.mark.skip
     def test_parser_addoption_default_env(self, monkeypatch):
@@ -81,18 +88,3 @@ class TestConfigCmdlineParsing:
         conf = config._reparse([tmp_path])
         with flowen.raises(AssertionError):
             conf.parse([])
-
-
-class TestConfigTmpdir:
-    def test_getbasetemp(self, tmp_path):
-        conf = Config(tmp_path)
-        conf.basetemp = "hello"
-        assert conf.getbasetemp() == "hello"
-
-    @pytest.mark.skip
-    def test_mktemp(self, tmp_path):
-        """我没搞懂这个测试用例的测试意图"""
-
-    @pytest.mark.skip
-    def test_reparse(self, testdir):
-        """我没搞懂这个测试用例的测试意图"""

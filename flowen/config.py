@@ -1,4 +1,5 @@
 import os
+from collections.abc import Callable
 from pathlib import Path
 
 from flowen.collect import Collector, Directory, Module
@@ -7,7 +8,11 @@ from flowen.parseopt import Parser
 
 
 class CmdOptions:
-    pass
+    def __init__(self, parser: Parser):
+        self._parser = parser._parser
+
+    def __getattr__(self, name):
+        return getattr(self._parser.parse_args([]), name)
 
 
 class Config:
@@ -15,7 +20,7 @@ class Config:
         self._parser = Parser()
         self.topdir = topdir
         self.conftest = Conftest()
-        self.option = CmdOptions()
+        self.option = CmdOptions(self._parser)
 
     def getfsnode(self, path: Path | str) -> Collector:
         path = Path(path)
@@ -48,11 +53,9 @@ class Config:
         finally:
             config = old_config
 
-    def addoptions(self, group_name: str, *options):
+    def addoptions(self, group_name: str, configure: Callable):
         group = self._parser.addgroup(group_name)
-        for option in options:
-            group.add_raw_option(option, self.option)
-
+        configure(group)
         return group
 
     def getbasetemp(self):
