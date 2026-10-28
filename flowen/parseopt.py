@@ -3,8 +3,8 @@ from collections.abc import Callable
 
 
 class Parser:
-    def __init__(self, processopt: Callable | None = None):
-        self._parser = argparse.ArgumentParser()
+    def __init__(self, usage=None, processopt: Callable | None = None):
+        self._parser = argparse.ArgumentParser(usage=usage or "default usage")
         self._default_group = self._parser.add_argument_group("default")
         self.groups = {"default": self._default_group}
         self.processopt = processopt
