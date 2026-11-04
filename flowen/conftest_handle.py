@@ -4,7 +4,7 @@ from collections.abc import Callable
 from pathlib import Path
 from types import ModuleType
 
-default_conftest_path = Path(__file__).parent / "default_conftest.py"
+default_conftest_path = Path(__file__).parent / "default_flowen.py"
 
 
 class Conftest:
@@ -12,6 +12,7 @@ class Conftest:
         self.path_conftest_map = {}
         self.conf_modules = []
         self.onimport = onimport
+        self.imported_modules = set()
 
         if path is not None:
             self.setinitial([path])
@@ -24,7 +25,7 @@ class Conftest:
 
     def create_path_conftest_map(self, path: Path):
         for cur in [path] + list(path.parents):
-            conf_path = cur / "conftest.py"
+            conf_path = cur / "flowen.py"
 
             if not conf_path.exists():
                 self.path_conftest_map[cur] = list(self.conf_modules)
@@ -33,6 +34,10 @@ class Conftest:
             if cur in self.path_conftest_map:
                 continue
 
+            if conf_path in self.imported_modules:
+                continue
+
+            self.imported_modules.add(conf_path)
             conf_module = self.import_conftest(conf_path)
             self.conf_modules.append(conf_module)
 
@@ -45,8 +50,13 @@ class Conftest:
         self.onimport(module) if self.onimport is not None else ""
         return module
 
-    def rget(self, key, path: Path | None = None):
-        return self.rget_with_confmod(key, path)[1]
+    def rget(self, key, path: Path | None = None, default=None):
+        try:
+            return self.rget_with_confmod(key, path)[1]
+        except KeyError:
+            if default is None:
+                return None
+            raise
 
     def rget_with_confmod(self, key: str, path: Path | None = None):
         if path is None:

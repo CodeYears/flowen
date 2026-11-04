@@ -86,9 +86,12 @@ class TestParser:
         assert args is option
 
     def test_parse_defaultgetter(self):
-        def defaultget(option):
-            option.__dict__["hello"] = "world"
-            option.__dict__["this"] = 42
+        def defaultget(action: argparse.Action):
+            if action.type == int:
+                action.default = 42
+
+            if action.type == str:
+                action.default = "world"
 
         parser = parseopt.Parser(processopt=defaultget)
         parser.add_argument("--this", dest="this", type=int, action="store")

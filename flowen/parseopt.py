@@ -10,11 +10,11 @@ class Parser:
         self.processopt = processopt
 
     def parse(self, args: list, namespace=None):
-        parse_args = self._parser.parse_args(args, namespace)
         if self.processopt:
-            self.processopt(parse_args)
+            for action in self._parser._actions:
+                self.processopt(action)
 
-        return parse_args
+        return self._parser.parse_args(args, namespace)
 
     def add_argument(self, *args, **kwargs):
         self._default_group.add_argument(*args, **kwargs)
