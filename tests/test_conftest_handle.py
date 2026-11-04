@@ -7,10 +7,10 @@ from flowen.conftest_handle import Conftest
 def parpare_conftest_env(tmp_path: Path):
     adir = tmp_path / "adir"
     adir.mkdir()
-    (adir / "conftest.py").write_text("a = 1\nDirectory = 3")
+    (adir / "flowen.py").write_text("a = 1\nDirectory = 3")
 
     (adir / "b").mkdir()
-    (adir / "b" / "conftest.py").write_text("b=2\na=1.5")
+    (adir / "b" / "flowen.py").write_text("b=2\na=1.5")
     return tmp_path
 
 
@@ -90,4 +90,4 @@ class TestConftestValueAccessGlobal:
         assert value == 1.5
         path = Path(mod.__file__)
         assert path.parent == topdir
-        assert path.stem == "conftest"
+        assert path.stem == "flowen"
