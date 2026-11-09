@@ -1,6 +1,7 @@
 from pathlib import Path
 
-import flowen
+import pytest
+
 from flowen.conftest_handle import Conftest
 
 
@@ -60,7 +61,7 @@ class TestConftestValueAccessGlobal:
     def test_value_access_not_existing(self, tmp_path: Path):
         tmp_path = parpare_conftest_env(tmp_path)
         conftest = Conftest(tmp_path)
-        with flowen.raises(KeyError):
+        with pytest.raises(KeyError):
             conftest.rget("a")
 
     def test_value_access_by_path(self, tmp_path: Path):

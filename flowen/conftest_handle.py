@@ -10,38 +10,45 @@ default_conftest_path = Path(__file__).parent / "default_flowen.py"
 class Conftest:
     def __init__(self, path: Path | None = None, onimport: Callable | None = None):
         self.path_conftest_map = {}
-        self.conf_modules = []
         self.onimport = onimport
-        self.imported_modules = set()
 
         if path is not None:
             self.setinitial([path])
 
     def setinitial(self, paths: list[Path]):
-        self.conf_modules.append(self.import_conftest(default_conftest_path))
-
         for path in paths + [Path.cwd()]:
-            self.create_path_conftest_map(path)
+            self.path_conftest_map[None] = self.create_path_conftest_map(path)
+            break
 
     def create_path_conftest_map(self, path: Path):
-        for cur in [path] + list(path.parents):
-            conf_path = cur / "flowen.py"
+        if path in self.path_conftest_map:
+            return self.path_conftest_map[path]
 
-            if not conf_path.exists():
-                self.path_conftest_map[cur] = list(self.conf_modules)
-                continue
+        paths: list[Path] = []
+        current = path
 
-            if cur in self.path_conftest_map:
-                continue
+        while current not in self.path_conftest_map:
+            paths.append(current)
+            try:
+                if current.parent == current:
+                    break
+            except AttributeError:
+                print("debug")
 
-            if conf_path in self.imported_modules:
-                continue
+            current = current.parent
 
-            self.imported_modules.add(conf_path)
-            conf_module = self.import_conftest(conf_path)
-            self.conf_modules.append(conf_module)
+        if current in self.path_conftest_map:
+            cpaths = list(self.path_conftest_map[current])
+        else:
+            cpaths = [self.import_conftest(default_conftest_path)]
 
-            self.path_conftest_map[cur] = list(self.conf_modules)
+        for current in reversed(paths):
+            flowen_path = current / "flowen.py"
+            if flowen_path.exists():
+                cpaths.append(self.import_conftest(flowen_path))
+            self.path_conftest_map[current] = list(cpaths)
+
+        return cpaths
 
     def import_conftest(self, confpath: Path) -> ModuleType:
         spec = importlib.util.spec_from_file_location(confpath.stem, confpath)
@@ -50,23 +57,17 @@ class Conftest:
         self.onimport(module) if self.onimport is not None else ""
         return module
 
-    def rget(self, key, path: Path | None = None, default=None):
+    def rget(self, key, path: Path | None = None, default="undefine"):
         try:
             return self.rget_with_confmod(key, path)[1]
         except KeyError:
-            if default is None:
-                return None
+            if default != "undefine":
+                return default
             raise
 
     def rget_with_confmod(self, key: str, path: Path | None = None):
-        if path is None:
-            for module in self.conf_modules:
-                if hasattr(module, key):
-                    return module, getattr(module, key)
-        else:
-            self.create_path_conftest_map(path)
-            for module in reversed(self.path_conftest_map[path]):
-                if hasattr(module, key):
-                    return module, getattr(module, key)
+        for module in reversed(self.create_path_conftest_map(path)):
+            if hasattr(module, key):
+                return module, getattr(module, key)
 
-        raise KeyError(key)
+        raise KeyError(f"{key} 在配置文件中未找到定义")
